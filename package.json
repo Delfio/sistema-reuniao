@@ -5,8 +5,7 @@
   "license": "MIT",
   "dependencies": {
     "mongoose": "^5.10.15",
-    "socket.io-client": "^3.0.1",
-    "sqlite3": "^5.0.0"
+    "socket.io": "^1.7.3"
   },
   "devDependencies": {
     "nodemon": "^2.0.6"

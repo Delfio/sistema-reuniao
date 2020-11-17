@@ -1,16 +1,15 @@
-const http = require('http');
 const moongose = require('mongoose');
-const net = require('net');
 const path = require('path');
 const fs = require('fs');
 
+const http = require('http');
+const socket = require('socket.io')
 
 /**
  * ROTAS
  * / Pagina inicial - arquivos estáticos
  * /votar
  * /comentar
- * 
  * /postar-reuniao
  */
 
@@ -24,9 +23,7 @@ const server = http.createServer(async (req, res) => {
         req.body = JSON.parse(data.toString());
     });
     
-
     const { socket } = req;
-
     const ipDoCliente = socket.remoteAddress;
     console.log(ipDoCliente);
 
@@ -54,10 +51,14 @@ const server = http.createServer(async (req, res) => {
     if(req.method === 'GET') {
         switch (req.url) {
             case '/':
-                const arquivo = path.resolve(__dirname, '..', 'cliente', 'index.html');
+                const arquivo = path.resolve(__dirname, 'cliente', 'index.html');
                 const data = await fs.readFileSync(arquivo);
 
                 res.end(data);
+                break;
+            case '/test':
+                res.write('{ok: true}');
+                res.end();
                 break;
             default:
                 break;
@@ -218,34 +219,14 @@ const server = http.createServer(async (req, res) => {
 
 });
 
-const serverSocket = net.createServer((c) => {
-    
-    c.on('end', () => {
-        console.log("Cliente desconectado")
-    });
+const  io = socket(server);
 
-    c.on('data', data => {
-        console.log(data.toString())
-        c.write('aaaaaaaaaaaaaaaaaaaaa')
+io.on('connection', (socket) => {
+    console.log('a user connected');
+    socket.on('chat message', (msg) => {
+        console.log(msg)
     })
-
-
-    c.pipe(c);
-})
-
-serverSocket.on('error', err => {
-    console.log(err);
-    throw err;
 });
-
-
-serverSocket.listen(3332, () => {
-    console.log("Servidor socket no ar bbbbbbbb")
-})
-
-serverSocket.on('listening', () => {
-    serverSocket.emit('teste', () => "1234")
-})
 
 server.listen(3333, 'localhost', () => {
     console.log("Servidor HTTP no ar bbbbb")
