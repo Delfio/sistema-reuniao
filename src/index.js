@@ -21,6 +21,8 @@ moongose.connect('mongodb+srv://master:deldel123@cluster0.hpai6.mongodb.net/reun
 });
 
 const server = http.createServer(async (req, res) => {
+    res.setHeader("Access-Control-Allow-Origin", "http://localhost");
+
     await req.on('data', data => {
         req.body = JSON.parse(data.toString());
     });
@@ -259,6 +261,9 @@ const  io = socket(server);
 
 io.on('connection', (socket) => {
     console.log('a user connected');
+
+    socket.emit('hello', "hellou");
+
     socket.on('chat message', (msg) => {
         console.log(msg)
         io.emit('chat message', msg)
