@@ -5,6 +5,8 @@ const fs = require('fs');
 const http = require('http');
 const socket = require('socket.io')
 
+const ReuniaoController = require('./controller/ReuniaoController');
+
 /**
  * ROTAS
  * / Pagina inicial - arquivos estáticos
@@ -60,7 +62,28 @@ const server = http.createServer(async (req, res) => {
                 res.write('{ok: true}');
                 res.end();
                 break;
+            case '/reunioes':
+                try {
+                    const reunioesCadastradas = await ReuniaoController.index();
+
+                    res.end(JSON.stringify(reunioesCadastradas))
+                } catch(err) {
+                    res.statusCode = 500;
+                    res.end(JSON.stringify({
+                        error: "Internal server error"
+                    }));
+                }
+                break;
+            case '/reuniao':
+                const { dataReuniao } = req.body;
+
+                const reuniao = await ReuniaoController.show(dataReuniao);
+
+                res.write(JSON.stringify(reuniao));
+                break;
             default:
+                console.log('man2:', req.url);
+
                 break;
         }
     } else if (req.method === 'POST') {
@@ -85,27 +108,19 @@ const server = http.createServer(async (req, res) => {
                         res.write(JSON.stringify(messageInformationIncomplete));
                         break;
                     }
-                const novaReuniao = {
-                    titulo,
-                    palestrante,
-                    dataDaPalestra,
-                    horasNecessarias
-                }
 
                 try {
-                    id = 5
-                    // const [ id ] = await db('tbl_reuniao').insert(novaReuniao);
-                    
-                    const message = {
-                        sucesso: "Palestra cadastrada com sucesso!",
-                        ultimoID: id,
-                    }
+                    const reuniaoCriada = await ReuniaoController.store({
+                        titulo,
+                        dataDaPalestra,
+                        palestrante,
+                        horasNecessarias
+                    })
 
-                    res.writeHead(JSON.stringify(message));
+                    res.write(JSON.stringify(reuniaoCriada));
                 } catch(err) {
                     res.statusCode = 500;
                     res.write('{"error": "' + err.message + '" }');
-                
                 }
                 break;
             case "/votar":
@@ -213,6 +228,27 @@ const server = http.createServer(async (req, res) => {
                 res.write("<h1> 404 NOT FOUND </h1>");
                 break;
         }
+    } else if (req.method === 'PATCH') {
+        const { url } = req;
+        
+        if(url.match(/votar/i)) {
+            try {
+                const [, id] = req.url.split(/\/votar\?id=/i);
+    
+                res.end(JSON.stringify({}))
+            } catch(err) {
+                res.statusCode = 404;
+                console.log(err);
+                res.write(JSON.stringify({
+                    error: "Reunião inexistente"
+                }))
+            }
+        } else if(url.match(/like/i)) {
+            const [, id] = req.url.split(/\/like\?id=/i);
+            const reuniaoExits = await ReuniaoController.likeReuniao(id);
+            res.end(JSON.stringify(reuniaoExits))
+
+        }
     }
 
     res.end();
@@ -225,7 +261,8 @@ io.on('connection', (socket) => {
     console.log('a user connected');
     socket.on('chat message', (msg) => {
         console.log(msg)
-    })
+        io.emit('chat message', msg)
+    });
 });
 
 server.listen(3333, 'localhost', () => {

@@ -21,6 +21,14 @@ const ReuniaoSchema = new Schema({
         default: 0
     },
 
+    horasNecessarias: {
+        type: Number,
+        default: 0.30
+    }
+
+    
+}, {
+    timestamps: true,
 })
 
 module.exports = model('Reuniao', ReuniaoSchema);
